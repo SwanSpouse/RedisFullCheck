@@ -1,10 +1,11 @@
 package checker
 
 import (
-	"full_check/common"
 	"sync"
-	"full_check/metric"
-	"full_check/client"
+
+	"github.com/alibaba/RedisFullCheck/src/full_check/client"
+	"github.com/alibaba/RedisFullCheck/src/full_check/common"
+	"github.com/alibaba/RedisFullCheck/src/full_check/metric"
 )
 
 type FullCheckParameter struct {
@@ -19,8 +20,8 @@ type FullCheckParameter struct {
 }
 
 type VerifierBase struct {
-	Stat         *metric.Stat
-	Param        *FullCheckParameter
+	Stat  *metric.Stat
+	Param *FullCheckParameter
 }
 
 func (p *VerifierBase) IncrKeyStat(oneKeyInfo *common.Key) {

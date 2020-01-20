@@ -1,11 +1,11 @@
 package common
 
 import (
-	redigoCluster "github.com/vinllen/redis-go-cluster"
 	redigo "github.com/garyburd/redigo/redis"
+	redigoCluster "github.com/vinllen/redis-go-cluster"
 )
 
-const(
+const (
 	RecvChanSize = 4096
 )
 
@@ -96,6 +96,6 @@ func (cc *ClusterConn) Flush() error {
 
 // read recvChan
 func (cc *ClusterConn) Receive() (reply interface{}, err error) {
-	ret := <- cc.recvChan
+	ret := <-cc.recvChan
 	return ret.answer, ret.err
 }

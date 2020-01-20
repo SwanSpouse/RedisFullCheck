@@ -1,14 +1,14 @@
 package full_check
 
 import (
-	"strconv"
 	"fmt"
+	"strconv"
+	"sync"
 
-	"full_check/common"
-	"full_check/client"
+	"github.com/alibaba/RedisFullCheck/src/full_check/client"
+	"github.com/alibaba/RedisFullCheck/src/full_check/common"
 
 	"github.com/jinzhu/copier"
-	"sync"
 )
 
 func (p *FullCheck) ScanFromSourceRedis(allKeys chan<- []*common.Key) {

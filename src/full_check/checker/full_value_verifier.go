@@ -1,16 +1,17 @@
 package checker
 
 import (
-	"full_check/common"
 	"bytes"
-	"full_check/metric"
-	"full_check/client"
-	"strconv"
-	"reflect"
 	"math"
+	"reflect"
+	"strconv"
+
+	"github.com/alibaba/RedisFullCheck/src/full_check/client"
+	"github.com/alibaba/RedisFullCheck/src/full_check/common"
+	"github.com/alibaba/RedisFullCheck/src/full_check/metric"
 )
 
-const(
+const (
 	StreamSegment = 5000
 )
 
@@ -90,8 +91,8 @@ func (p *FullValueVerifier) VerifyOneGroupKeyInfo(keyInfo []*common.Key, conflic
 
 			// 太大的 hash、list、set、zset 特殊单独处理。
 			if keyInfo[i].Tp != common.StringKeyType &&
-					(keyInfo[i].SourceAttr.ItemCount > common.BigKeyThreshold ||
-						keyInfo[i].TargetAttr.ItemCount > common.BigKeyThreshold) {
+				(keyInfo[i].SourceAttr.ItemCount > common.BigKeyThreshold ||
+					keyInfo[i].TargetAttr.ItemCount > common.BigKeyThreshold) {
 				if p.ignoreBigKey {
 					// 如果启用忽略大key开关，则进入这个分支
 					if keyInfo[i].SourceAttr.ItemCount != keyInfo[i].TargetAttr.ItemCount {
@@ -152,9 +153,9 @@ func (p *FullValueVerifier) VerifyOneGroupKeyInfo(keyInfo []*common.Key, conflic
 
 			if keyInfo[i].ConflictType == common.ValueConflict {
 				if keyInfo[i].Tp != common.StringKeyType &&
-						(keyInfo[i].SourceAttr.ItemCount > common.BigKeyThreshold ||
-							keyInfo[i].TargetAttr.ItemCount > common.BigKeyThreshold) &&
-						p.ignoreBigKey {
+					(keyInfo[i].SourceAttr.ItemCount > common.BigKeyThreshold ||
+						keyInfo[i].TargetAttr.ItemCount > common.BigKeyThreshold) &&
+					p.ignoreBigKey {
 					// 如果启用忽略大key开关，则进入这个分支
 					if keyInfo[i].SourceAttr.ItemCount != keyInfo[i].TargetAttr.ItemCount {
 						keyInfo[i].ConflictType = common.ValueConflict
@@ -174,7 +175,7 @@ func (p *FullValueVerifier) VerifyOneGroupKeyInfo(keyInfo []*common.Key, conflic
 					fullCheckFetchAllKeyInfo = append(fullCheckFetchAllKeyInfo, keyInfo[i])
 				case common.ListKeyType:
 					if keyInfo[i].SourceAttr.ItemCount > common.BigKeyThreshold ||
-							keyInfo[i].TargetAttr.ItemCount > common.BigKeyThreshold {
+						keyInfo[i].TargetAttr.ItemCount > common.BigKeyThreshold {
 						p.CheckFullBigValue_List(keyInfo[i], conflictKey, sourceClient, targetClient)
 					} else {
 						fullCheckFetchAllKeyInfo = append(fullCheckFetchAllKeyInfo, keyInfo[i])
@@ -204,7 +205,7 @@ func (p *FullValueVerifier) VerifyOneGroupKeyInfo(keyInfo []*common.Key, conflic
 }
 
 func (p *FullValueVerifier) CheckFullValueFetchAll(keyInfo []*common.Key, conflictKey chan<- *common.Key,
-		sourceClient, targetClient *client.RedisClient) {
+	sourceClient, targetClient *client.RedisClient) {
 	// fetch value
 	sourceReply, err := sourceClient.PipeValueCommand(keyInfo)
 	if err != nil {
@@ -338,7 +339,7 @@ func (p *FullValueVerifier) CheckPartialValueSortedSet(oneKeyInfo *common.Key, c
 }
 
 func (p *FullValueVerifier) CheckFullBigValue_List(oneKeyInfo *common.Key, conflictKey chan<- *common.Key,
-		sourceClient *client.RedisClient, targetClient *client.RedisClient) {
+	sourceClient *client.RedisClient, targetClient *client.RedisClient) {
 	conflictField := make([]common.Field, 0, oneKeyInfo.SourceAttr.ItemCount/100+1)
 	oneCmpCount := p.Param.BatchCount * 10
 	if oneCmpCount > 10240 {
@@ -424,14 +425,14 @@ func (p *FullValueVerifier) Compare_Hash_Set_SortedSet(oneKeyInfo *common.Key, c
 		vTarget, ok := targetValue[k]
 		if ok == false {
 			conflictField = append(conflictField, common.Field{
-				Field: []byte(k),
+				Field:        []byte(k),
 				ConflictType: common.LackTargetConflict})
 			p.IncrFieldStat(oneKeyInfo, common.LackTargetConflict)
 		} else {
 			delete(targetValue, k)
 			if bytes.Equal(v, vTarget) == false {
 				conflictField = append(conflictField, common.Field{
-					Field: []byte(k),
+					Field:        []byte(k),
 					ConflictType: common.ValueConflict})
 				p.IncrFieldStat(oneKeyInfo, common.ValueConflict)
 			} else {
@@ -442,7 +443,7 @@ func (p *FullValueVerifier) Compare_Hash_Set_SortedSet(oneKeyInfo *common.Key, c
 
 	for k, _ := range targetValue {
 		conflictField = append(conflictField, common.Field{
-			Field: []byte(k),
+			Field:        []byte(k),
 			ConflictType: common.LackSourceConflict})
 		p.IncrFieldStat(oneKeyInfo, common.LackSourceConflict)
 	}
@@ -466,7 +467,7 @@ func (p *FullValueVerifier) Compare_List(oneKeyInfo *common.Key, conflictKey cha
 			// list 只保存第一个不一致的field
 			oneKeyInfo.Field = make([]common.Field, 1)
 			oneKeyInfo.Field[0] = common.Field{
-				Field: []byte(strconv.FormatInt(int64(i), 10)),
+				Field:        []byte(strconv.FormatInt(int64(i), 10)),
 				ConflictType: common.ValueConflict}
 			oneKeyInfo.ConflictType = common.ValueConflict
 			conflictKey <- oneKeyInfo
@@ -483,7 +484,7 @@ func (p *FullValueVerifier) Compare_List(oneKeyInfo *common.Key, conflictKey cha
  * 3. compare all elements in PEL(`xpending ${stream_name} ${group} - + ${number}`)
  */
 func (p *FullValueVerifier) CompareStream(oneKeyInfo *common.Key, conflictKey chan<- *common.Key,
-		sourceClient, targetClient *client.RedisClient) {
+	sourceClient, targetClient *client.RedisClient) {
 	// 1. fetch source and target groups info
 	sourceGroupsInfo, err := sourceClient.Do("XINFO", "GROUPS", oneKeyInfo.Key)
 	if err != nil {
@@ -529,7 +530,7 @@ func (p *FullValueVerifier) CompareStream(oneKeyInfo *common.Key, conflictKey ch
 
 	// 2. compare all elements in stream
 	length := oneKeyInfo.SourceAttr.ItemCount
-	step := int64(math.Max(float64(StreamSegment), float64(length) / 20))
+	step := int64(math.Max(float64(StreamSegment), float64(length)/20))
 	for sum, startTs := int64(0), "0-0"; sum < length; sum += step {
 		// fetch all elements in stream
 		// 1. from source
@@ -563,7 +564,7 @@ func (p *FullValueVerifier) CompareStream(oneKeyInfo *common.Key, conflictKey ch
 
 	// 3. compare all elements in PEL
 	for _, groupEle := range groupsBasic {
-		step := int64(math.Max(float64(StreamSegment), float64(length) / 20))
+		step := int64(math.Max(float64(StreamSegment), float64(length)/20))
 		for sum, startTs := int64(0), "0-0"; sum < length; sum += step {
 			sourceXpending, err := sourceClient.Do("XPENDING", oneKeyInfo.Key, groupEle.name, startTs,
 				"+", step)
@@ -607,7 +608,7 @@ func (p *FullValueVerifier) CompareStream(oneKeyInfo *common.Key, conflictKey ch
 			}
 
 			// set last-ts
-			last := sourceXpendingArray[len(sourceXpendingArray) - 1]
+			last := sourceXpendingArray[len(sourceXpendingArray)-1]
 			lastTs := last.([]interface{})[0].([]byte)
 			startTs = string(lastTs)
 		}

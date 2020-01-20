@@ -1,10 +1,11 @@
 package checker
 
 import (
-	"full_check/common"
 	"sync"
-	"full_check/metric"
-	"full_check/client"
+
+	"github.com/alibaba/RedisFullCheck/src/full_check/client"
+	"github.com/alibaba/RedisFullCheck/src/full_check/common"
+	"github.com/alibaba/RedisFullCheck/src/full_check/metric"
 )
 
 type KeyOutlineVerifier struct {
@@ -67,7 +68,7 @@ func (p *KeyOutlineVerifier) VerifyOneGroupKeyInfo(keyInfo []*common.Key, confli
 
 		// key lack in target redis
 		if keyInfo[i].TargetAttr.ItemCount == 0 &&
-				keyInfo[i].TargetAttr.ItemCount != keyInfo[i].SourceAttr.ItemCount {
+			keyInfo[i].TargetAttr.ItemCount != keyInfo[i].SourceAttr.ItemCount {
 			keyInfo[i].ConflictType = common.LackTargetConflict
 			p.IncrKeyStat(keyInfo[i])
 			conflictKey <- keyInfo[i]

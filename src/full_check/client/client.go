@@ -1,19 +1,19 @@
 package client
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
-	"errors"
 
-	"full_check/common"
+	"github.com/alibaba/RedisFullCheck/src/full_check/common"
 
 	"github.com/garyburd/redigo/redis"
 	redigoCluster "github.com/vinllen/redis-go-cluster"
-	"reflect"
 )
 
 var (

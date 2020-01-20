@@ -1,7 +1,7 @@
 package metric
 
 import (
-	"full_check/common"
+	"github.com/alibaba/RedisFullCheck/src/full_check/common"
 )
 
 type Stat struct {
@@ -10,7 +10,7 @@ type Stat struct {
 	ConflictKey   [common.EndKeyTypeIndex][common.EndConflict]AtomicSpeedCounter
 
 	TotalConflictFields int64
-	TotalConflictKeys int64
+	TotalConflictKeys   int64
 }
 
 func (p *Stat) Rotate() {

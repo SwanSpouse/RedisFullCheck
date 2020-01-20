@@ -3,7 +3,8 @@ package metric
 import (
 	"fmt"
 	"sync/atomic"
-	"full_check/common"
+
+	"github.com/alibaba/RedisFullCheck/src/full_check/common"
 )
 
 type CounterStat struct {
