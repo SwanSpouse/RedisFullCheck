@@ -12,11 +12,11 @@ import (
 	"sync"
 	"time"
 
-	"full_check/common"
-	"full_check/metric"
-	"full_check/checker"
-	"full_check/configure"
-	"full_check/client"
+	"github.com/alibaba/RedisFullCheck/src/full_check/checker"
+	"github.com/alibaba/RedisFullCheck/src/full_check/client"
+	"github.com/alibaba/RedisFullCheck/src/full_check/common"
+	"github.com/alibaba/RedisFullCheck/src/full_check/configure"
+	"github.com/alibaba/RedisFullCheck/src/full_check/metric"
 
 	_ "github.com/mattn/go-sqlite3"
 )

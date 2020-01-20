@@ -6,14 +6,14 @@ import (
 	"strconv"
 	"strings"
 
-	"full_check/configure"
-	"full_check/full_check"
-	"full_check/checker"
-	"full_check/client"
-	"full_check/common"
+	"github.com/alibaba/RedisFullCheck/src/full_check/checker"
+	"github.com/alibaba/RedisFullCheck/src/full_check/client"
+	"github.com/alibaba/RedisFullCheck/src/full_check/common"
+	"github.com/alibaba/RedisFullCheck/src/full_check/configure"
+	"github.com/alibaba/RedisFullCheck/src/full_check/full_check"
 
-	"github.com/jessevdk/go-flags"
 	"github.com/gugemichael/nimo4go"
+	"github.com/jessevdk/go-flags"
 )
 
 var VERSION = "$"

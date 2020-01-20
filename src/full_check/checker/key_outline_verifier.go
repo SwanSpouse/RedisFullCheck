@@ -1,10 +1,11 @@
 package checker
 
 import (
-	"full_check/common"
 	"sync"
-	"full_check/metric"
-	"full_check/client"
+
+	"github.com/alibaba/RedisFullCheck/src/full_check/client"
+	"github.com/alibaba/RedisFullCheck/src/full_check/common"
+	"github.com/alibaba/RedisFullCheck/src/full_check/metric"
 )
 
 type KeyOutlineVerifier struct {

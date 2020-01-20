@@ -1,10 +1,10 @@
 package client
 
 import (
-	"strings"
 	"fmt"
+	"strings"
 
-	"full_check/common"
+	"github.com/alibaba/RedisFullCheck/src/full_check/common"
 )
 
 const (

@@ -1,8 +1,9 @@
 package common
 
 import (
-	"github.com/cihub/seelog"
 	"fmt"
+
+	"github.com/cihub/seelog"
 )
 
 const (

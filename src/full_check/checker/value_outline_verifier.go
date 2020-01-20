@@ -1,9 +1,9 @@
 package checker
 
 import (
-	"full_check/metric"
-	"full_check/common"
-	"full_check/client"
+	"github.com/alibaba/RedisFullCheck/src/full_check/client"
+	"github.com/alibaba/RedisFullCheck/src/full_check/common"
+	"github.com/alibaba/RedisFullCheck/src/full_check/metric"
 )
 
 func NewValueOutlineVerifier(stat *metric.Stat, param *FullCheckParameter) *ValueOutlineVerifier {
