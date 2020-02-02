@@ -12,10 +12,10 @@ type FullCheckParameter struct {
 	SourceHost   client.RedisHost
 	TargetHost   client.RedisHost
 	ResultDBFile string
-	CompareCount int
-	Interval     int
+	CompareCount int // 比较次数限制
+	Interval     int // 两次比较之间的间隔
 	BatchCount   int
-	Parallel     int
+	Parallel     int // 并发度
 	FilterTree   *common.Trie
 }
 

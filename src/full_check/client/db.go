@@ -16,7 +16,7 @@ import (
  */
 func (p *RedisClient) FetchBaseInfo(isCluster bool) (map[int32]int64, []string, error) {
 	var logicalDBMap map[int32]int64
-
+	// 判断是否是Redis集群
 	if !isCluster {
 		// get keyspace
 		keyspaceContent, err := p.Do("info", "Keyspace")

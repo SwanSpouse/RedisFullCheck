@@ -157,7 +157,7 @@ func main() {
 			DBType:       conf.Opts.TargetDBType,
 			DBFilterList: common.FilterDBList(conf.Opts.TargetDBFilterList),
 		},
-		ResultDBFile: conf.Opts.ResultDBFile,
+		ResultDBFile: conf.Opts.ResultDBFile, // 存储结果，这里用的是sqlite
 		CompareCount: compareCount,
 		Interval:     conf.Opts.Interval,
 		BatchCount:   batchCount,

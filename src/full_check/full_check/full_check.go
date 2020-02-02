@@ -31,14 +31,14 @@ const (
 )
 
 type FullCheck struct {
-	checker.FullCheckParameter
+	checker.FullCheckParameter // 配置
 
 	stat                 metric.Stat
-	currentDB            int32
-	times                int
+	currentDB            int32 // 当前db
+	times                int   // 比较key的次数
 	db                   [100]*sql.DB
-	sourcePhysicalDBList []string
-	sourceLogicalDBMap   map[int32]int64
+	sourcePhysicalDBList []string        // 物理db list
+	sourceLogicalDBMap   map[int32]int64 // 逻辑db map
 
 	totalConflict      int64
 	totalKeyConflict   int64
@@ -208,6 +208,7 @@ func (p *FullCheck) IncrScanStat(a int) {
 	p.stat.Scan.Inc(a)
 }
 
+// 在这里开始进行真正的校验
 func (p *FullCheck) Start() {
 	var err error
 
@@ -220,20 +221,19 @@ func (p *FullCheck) Start() {
 		}
 		defer p.db[i].Close()
 	}
-
+	// 在这里NewRedisClient
 	sourceClient, err := client.NewRedisClient(p.SourceHost, 0)
 	if err != nil {
-		panic(common.Logger.Errorf("create redis client with host[%v] db[%v] error[%v]",
-			p.SourceHost, 0, err))
+		panic(common.Logger.Errorf("create redis client with host[%v] db[%v] error[%v]", p.SourceHost, 0, err))
 	}
 
+	// 获取源db信息
 	p.sourceLogicalDBMap, p.sourcePhysicalDBList, err = sourceClient.FetchBaseInfo(conf.Opts.SourceDBType == 1)
 	if err != nil {
 		panic(common.Logger.Critical(err))
 	}
 
-	common.Logger.Infof("sourceDbType=%v, p.sourcePhysicalDBList=%v", p.FullCheckParameter.SourceHost.DBType,
-		p.sourcePhysicalDBList)
+	common.Logger.Infof("sourceDbType=%v, p.sourcePhysicalDBList=%v", p.FullCheckParameter.SourceHost.DBType, p.sourcePhysicalDBList)
 
 	sourceClient.Close()
 	for db, keyNum := range p.sourceLogicalDBMap {
@@ -243,7 +243,7 @@ func (p *FullCheck) Start() {
 			common.Logger.Infof("db=%d:keys=%d", db, keyNum)
 		}
 	}
-
+	// 每次比较key的个数
 	for p.times = 1; p.times <= p.CompareCount; p.times++ {
 		p.CreateDbTable(p.times)
 		if p.times != 1 {
@@ -252,6 +252,7 @@ func (p *FullCheck) Start() {
 		}
 		common.Logger.Infof("---------------- start %dth time compare", p.times)
 
+		// 对sourceLogicalDBMap中的db一次进行处理
 		for db := range p.sourceLogicalDBMap {
 			p.currentDB = db
 			p.stat.Reset(false)
@@ -260,6 +261,7 @@ func (p *FullCheck) Start() {
 			ctxStat, cancelStat := context.WithCancel(context.Background()) // 主动cancel
 			go func(ctx context.Context) {
 				defer func() {
+					// metric stop
 					tickerStat.Stop()
 				}()
 
@@ -273,9 +275,11 @@ func (p *FullCheck) Start() {
 					p.PrintStat(false)
 				}
 			}(ctxStat)
-
+			// 开始进行比较
 			common.Logger.Infof("start compare db %d", p.currentDB)
+			// key往这里放
 			keys := make(chan []*common.Key, 1024)
+			// 发现冲突的key往这里放
 			conflictKey := make(chan *common.Key, 1024)
 			var wg, wg2 sync.WaitGroup
 			// start scan, get all keys
@@ -283,6 +287,7 @@ func (p *FullCheck) Start() {
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
+					// 从SourceRedis里面开始进行scan
 					p.ScanFromSourceRedis(keys)
 				}()
 			} else {
@@ -295,9 +300,11 @@ func (p *FullCheck) Start() {
 
 			// start check
 			wg.Add(p.Parallel)
+			// 启动parallel个goroutine来进行处理
 			for i := 0; i < p.Parallel; i++ {
 				go func() {
 					defer wg.Done()
+					// 进行比较
 					p.VerifyAllKeyInfo(keys, conflictKey)
 				}()
 			}
@@ -323,8 +330,7 @@ func (p *FullCheck) Start() {
 	} // end for
 
 	p.stat.Reset(false)
-	common.Logger.Infof("--------------- finished! ----------------\nall finish successfully, totally %d key(s) and %d field(s) conflict",
-		p.stat.TotalConflictKeys, p.stat.TotalConflictFields)
+	common.Logger.Infof("--------------- finished! ----------------\nall finish successfully, totally %d key(s) and %d field(s) conflict", p.stat.TotalConflictKeys, p.stat.TotalConflictFields)
 }
 
 func (p *FullCheck) GetCurrentResultTable() (key string, field string) {
@@ -339,6 +345,7 @@ func (p *FullCheck) GetLastResultTable() (key string, field string) {
 	return fmt.Sprintf("key_%d", p.times-1), fmt.Sprintf("field_%d", p.times-1)
 }
 
+// 创建table存储比较结果
 func (p *FullCheck) CreateDbTable(times int) {
 	/** create table **/
 	conflictKeyTableName, conflictFieldTableName := p.GetCurrentResultTable()
