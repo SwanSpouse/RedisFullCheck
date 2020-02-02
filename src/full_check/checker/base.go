@@ -14,7 +14,7 @@ type FullCheckParameter struct {
 	ResultDBFile string
 	CompareCount int // 比较次数限制
 	Interval     int // 两次比较之间的间隔
-	BatchCount   int
+	BatchCount   int // 每次从Redis里面scan的数量
 	Parallel     int // 并发度
 	FilterTree   *common.Trie
 }
@@ -97,8 +97,7 @@ func (p *VerifierBase) recheckTTL(keyInfo []*common.Key, client *client.RedisCli
 }
 
 type IVerifier interface {
-	VerifyOneGroupKeyInfo(keyInfo []*common.Key, conflictKey chan<- *common.Key, sourceClient *client.RedisClient,
-		targetClient *client.RedisClient)
+	VerifyOneGroupKeyInfo(keyInfo []*common.Key, conflictKey chan<- *common.Key, sourceClient *client.RedisClient, targetClient *client.RedisClient)
 }
 
 type ValueOutlineVerifier struct {

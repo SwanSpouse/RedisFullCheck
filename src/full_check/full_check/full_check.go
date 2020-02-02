@@ -393,6 +393,7 @@ CREATE TABLE IF NOT EXISTS %s(
 	}
 }
 
+// 进行校验
 func (p *FullCheck) VerifyAllKeyInfo(allKeys <-chan []*common.Key, conflictKey chan<- *common.Key) {
 	sourceClient, err := client.NewRedisClient(p.SourceHost, p.currentDB)
 	if err != nil {
@@ -411,13 +412,14 @@ func (p *FullCheck) VerifyAllKeyInfo(allKeys <-chan []*common.Key, conflictKey c
 	// limit qps
 	qos := common.StartQoS(conf.Opts.Qps)
 	for keyInfo := range allKeys {
-		<-qos.Bucket
+		<-qos.Bucket // 这里能执行多少次，就能校验多少个key
 		p.verifier.VerifyOneGroupKeyInfo(keyInfo, conflictKey, &sourceClient, &targetClient)
 	} // for oneGroupKeys := range allKeys
 
 	qos.Close()
 }
 
+// 感觉这块问题也不少，可以仔细读读
 func (p *FullCheck) WriteConflictKey(conflictKey <-chan *common.Key) {
 	conflictKeyTableName, conflictFieldTableName := p.GetCurrentResultTable()
 
@@ -427,6 +429,7 @@ func (p *FullCheck) WriteConflictKey(conflictKey <-chan *common.Key) {
 		defer resultfile.Close()
 	}
 
+	// TODO  @LiMingJi 这里的两个sql不是和下面的两个sql重复了吗？
 	tx, _ := p.db[p.times].Begin()
 	statInsertKey, err := tx.Prepare(fmt.Sprintf("insert into %s (key, type, conflict_type, db, source_len, target_len) values(?,?,?,?,?,?)", conflictKeyTableName))
 	if err != nil {
@@ -439,6 +442,7 @@ func (p *FullCheck) WriteConflictKey(conflictKey <-chan *common.Key) {
 
 	count := 0
 	for oneKeyInfo := range conflictKey {
+		// 每1000次执行一次插入操作
 		if count%1000 == 0 {
 			var err error
 			statInsertKey.Close()
@@ -460,11 +464,12 @@ func (p *FullCheck) WriteConflictKey(conflictKey <-chan *common.Key) {
 			}
 		}
 		count += 1
-
+		// 执行插入操作
 		result, err := statInsertKey.Exec(string(oneKeyInfo.Key), oneKeyInfo.Tp.Name, oneKeyInfo.ConflictType.String(), p.currentDB, oneKeyInfo.SourceAttr.ItemCount, oneKeyInfo.TargetAttr.ItemCount)
 		if err != nil {
 			panic(common.Logger.Error(err))
 		}
+		// 如果value有不同则插入value
 		if len(oneKeyInfo.Field) != 0 {
 			lastId, _ := result.LastInsertId()
 			for i := 0; i < len(oneKeyInfo.Field); i++ {

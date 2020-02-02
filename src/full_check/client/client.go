@@ -247,6 +247,7 @@ begin:
 	return result, nil
 }
 
+// 批量请求key类型
 func (p *RedisClient) PipeTypeCommand(keyInfo []*common.Key) ([]string, error) {
 	commands := make([]combine, len(keyInfo))
 	for i, key := range keyInfo {
@@ -277,6 +278,7 @@ func (p *RedisClient) PipeTypeCommand(keyInfo []*common.Key) ([]string, error) {
 	return result, nil
 }
 
+// 判断key是否存在
 func (p *RedisClient) PipeExistsCommand(keyInfo []*common.Key) ([]int64, error) {
 	commands := make([]combine, len(keyInfo))
 	for i, key := range keyInfo {
@@ -335,6 +337,7 @@ func (p *RedisClient) PipeLenCommand(keyInfo []*common.Key) ([]int64, error) {
 	return result, nil
 }
 
+// 批量拿ttl
 func (p *RedisClient) PipeTTLCommand(keyInfo []*common.Key) ([]bool, error) {
 	commands := make([]combine, len(keyInfo))
 	for i, key := range keyInfo {

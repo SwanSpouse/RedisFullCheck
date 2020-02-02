@@ -119,6 +119,7 @@ type Field struct {
 }
 
 type Attribute struct {
+	// TODO @LiMingji 有的时候这个值不是length 比如在KeyOutline的时候
 	ItemCount int64 // the length of value
 }
 

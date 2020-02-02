@@ -35,6 +35,7 @@ func (p *KeyOutlineVerifier) FetchKeys(keyInfo []*common.Key, sourceClient *clie
 			 */
 			keyInfo[i].SourceAttr.ItemCount = 1
 		}
+		// TODO @LiMingji 如果上面发生panic这里就没有机会执行了。
 		wg.Done()
 	}()
 
@@ -44,19 +45,23 @@ func (p *KeyOutlineVerifier) FetchKeys(keyInfo []*common.Key, sourceClient *clie
 		if err != nil {
 			panic(common.Logger.Critical(err))
 		}
+		// 这个t的值是exist命令的返回值，0、1两种结果
 		for i, t := range targetKeyTypeStr {
 			keyInfo[i].TargetAttr.ItemCount = t
 		}
+		// TODO @LiMingji 如果上面发生panic这里就没有机会执行了。
 		wg.Done()
 	}()
 
 	wg.Wait()
 }
 
+// 对这一批的key进行校验
 func (p *KeyOutlineVerifier) VerifyOneGroupKeyInfo(keyInfo []*common.Key, conflictKey chan<- *common.Key, sourceClient *client.RedisClient, targetClient *client.RedisClient) {
 	p.FetchKeys(keyInfo, sourceClient, targetClient)
 
 	// re-check ttl on the source side when key missing on the target side
+	// 当target这边有，source没有的时候校验一下ttl
 	p.RecheckTTL(keyInfo, sourceClient)
 
 	// compare, filter
@@ -67,8 +72,9 @@ func (p *KeyOutlineVerifier) VerifyOneGroupKeyInfo(keyInfo []*common.Key, confli
 		}
 
 		// key lack in target redis
-		if keyInfo[i].TargetAttr.ItemCount == 0 &&
-			keyInfo[i].TargetAttr.ItemCount != keyInfo[i].SourceAttr.ItemCount {
+		// 标记key在target里面缺失
+		// 只比较了key的长度？
+		if keyInfo[i].TargetAttr.ItemCount == 0 && keyInfo[i].TargetAttr.ItemCount != keyInfo[i].SourceAttr.ItemCount {
 			keyInfo[i].ConflictType = common.LackTargetConflict
 			p.IncrKeyStat(keyInfo[i])
 			conflictKey <- keyInfo[i]

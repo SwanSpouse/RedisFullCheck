@@ -11,9 +11,12 @@ import (
 	"github.com/jinzhu/copier"
 )
 
+// 从redis里面开始scan key
+// 可惜的是我们的scan已经被禁用了。。。
 func (p *FullCheck) ScanFromSourceRedis(allKeys chan<- []*common.Key) {
 	var wg sync.WaitGroup
-
+	// 在这里开始搞物理dblist
+	// 启动这么多个goroutine 并发
 	wg.Add(len(p.sourcePhysicalDBList))
 	for idx := 0; idx < len(p.sourcePhysicalDBList); idx++ {
 		// use goroutine to run db concurrently
@@ -48,21 +51,22 @@ func (p *FullCheck) ScanFromSourceRedis(allKeys chan<- []*common.Key) {
 			for {
 				var reply interface{}
 				var err error
-
+				// 在这里判断BType的类型，执行不同的命令把key从Redis里面利用scan命令取出来
+				// 如果有一天可以支持头条了，在这里加一个Type就行了
 				switch p.SourceHost.DBType {
+				case common.TypeTencentProxy:
+					reply, err = sourceClient.Do("scan", cursor, "count", p.BatchCount, p.sourcePhysicalDBList[index])
 				case common.TypeDB:
 					fallthrough
 				case common.TypeCluster:
 					reply, err = sourceClient.Do("scan", cursor, "count", p.BatchCount)
 				case common.TypeAliyunProxy:
 					reply, err = sourceClient.Do("iscan", index, cursor, "count", p.BatchCount)
-				case common.TypeTencentProxy:
-					reply, err = sourceClient.Do("scan", cursor, "count", p.BatchCount, p.sourcePhysicalDBList[index])
 				}
 				if err != nil {
 					panic(common.Logger.Critical(err))
 				}
-
+				// 在这里拿到返回值
 				replyList, ok := reply.([]interface{})
 				if ok == false || len(replyList) != 2 {
 					panic(common.Logger.Criticalf("scan %d count %d failed, result: %+v", cursor, p.BatchCount, reply))
@@ -72,7 +76,7 @@ func (p *FullCheck) ScanFromSourceRedis(allKeys chan<- []*common.Key) {
 				if ok == false {
 					panic(common.Logger.Criticalf("scan %d count %d failed, result: %+v", cursor, p.BatchCount, reply))
 				}
-
+				// TODO @LiMingji 这里查一下RedisScan命令的返回结果是什么样的
 				cursor, err = strconv.Atoi(string(bytes))
 				if err != nil {
 					panic(common.Logger.Critical(err))
@@ -116,10 +120,10 @@ func (p *FullCheck) ScanFromSourceRedis(allKeys chan<- []*common.Key) {
 }
 
 func (p *FullCheck) ScanFromDB(allKeys chan<- []*common.Key) {
+	// 获取上一次结果存储的table
 	conflictKeyTableName, conflictFieldTableName := p.GetLastResultTable()
 
-	keyQuery := fmt.Sprintf("select id,key,type,conflict_type,source_len,target_len from %s where id>? and db=%d limit %d",
-		conflictKeyTableName, p.currentDB, p.BatchCount)
+	keyQuery := fmt.Sprintf("select id,key,type,conflict_type,source_len,target_len from %s where id>? and db=%d limit %d", conflictKeyTableName, p.currentDB, p.BatchCount)
 	keyStatm, err := p.db[p.times-1].Prepare(keyQuery)
 	if err != nil {
 		panic(common.Logger.Error(err))
