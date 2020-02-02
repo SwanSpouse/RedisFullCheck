@@ -92,6 +92,7 @@ func main() {
 	if conf.Opts.CompareMode < full_check.FullValue || conf.Opts.CompareMode > full_check.FullValueWithOutline {
 		panic(common.Logger.Errorf("invalid compare mode %d", conf.Opts.CompareMode))
 	}
+	// 大Key的限制
 	if conf.Opts.BigKeyThreshold < 0 {
 		panic(common.Logger.Errorf("invalid big key threshold: %d", conf.Opts.BigKeyThreshold))
 	} else if conf.Opts.BigKeyThreshold == 0 {
@@ -168,5 +169,6 @@ func main() {
 	common.Logger.Info("---------")
 
 	fullCheck := full_check.NewFullCheck(fullCheckParameter, full_check.CheckType(conf.Opts.CompareMode))
+	// 上面所有的地方都是在校验输入参数
 	fullCheck.Start()
 }
