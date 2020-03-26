@@ -18,15 +18,15 @@ import (
 
 var VERSION = "$"
 
+// 入口函数
 func main() {
-	// parse conf.Opts
+	// parse conf.Opts 解析配置
 	args, err := flags.Parse(&conf.Opts)
-
+	// 读取版本号
 	if conf.Opts.Version {
 		fmt.Println(VERSION)
 		os.Exit(0)
 	}
-
 	// 若err != nil, 会自动打印错误到 stderr
 	if err != nil {
 		if flagsErr, ok := err.(*flags.Error); ok && flagsErr.Type == flags.ErrHelp {
@@ -36,12 +36,10 @@ func main() {
 			os.Exit(1)
 		}
 	}
-
 	if conf.Opts.SourceAddr == "" || conf.Opts.TargetAddr == "" {
 		fmt.Fprintf(os.Stderr, "-s, --source or -t, --target not specified\n")
 		os.Exit(1)
 	}
-
 	if len(args) != 0 {
 		fmt.Fprintf(os.Stderr, "unexpected args %+v", args)
 		os.Exit(1)
@@ -63,32 +61,38 @@ func main() {
 	}
 	common.Logger.Info("init log success")
 	defer common.Logger.Flush()
-
+	// 每次比较的次数
 	compareCount, err := strconv.Atoi(conf.Opts.CompareTimes)
 	if err != nil || compareCount < 1 {
 		panic(common.Logger.Errorf("invalid option cmpcount %s, expect int >=1", conf.Opts.CompareTimes))
 	}
+	// 间隔
 	if conf.Opts.Interval < 0 {
 		panic(common.Logger.Errorf("invalid option interval %d, expect int >=0", conf.Opts.Interval))
 	}
+	// 每次处理的条数
 	batchCount, err := strconv.Atoi(conf.Opts.BatchCount)
 	if err != nil || batchCount < 1 || batchCount > 10000 {
 		panic(common.Logger.Errorf("invalid option batchcount %s, expect int 1<=batchcount<=10000", conf.Opts.BatchCount))
 	}
+	// 并发度
 	parallel := conf.Opts.Parallel
 	if parallel < 1 || parallel > 100 {
 		panic(common.Logger.Errorf("invalid option parallel %d, expect 1<=parallel<=100", conf.Opts.Parallel))
 	}
+	// qps限制
 	qps := conf.Opts.Qps
 	if qps < 1 || qps > 5000000 {
 		panic(common.Logger.Errorf("invalid option qps %d, expect 1<=qps<=5000000", conf.Opts.Qps))
 	}
+	// 认证
 	if conf.Opts.SourceAuthType != "auth" && conf.Opts.SourceAuthType != "adminauth" {
 		panic(common.Logger.Errorf("invalid sourceauthtype %s, expect auth/adminauth", conf.Opts.SourceAuthType))
 	}
 	if conf.Opts.TargetAuthType != "auth" && conf.Opts.TargetAuthType != "adminauth" {
 		panic(common.Logger.Errorf("invalid targetauthtype %s, expect auth/adminauth", conf.Opts.TargetAuthType))
 	}
+	// 比较模型
 	if conf.Opts.CompareMode < full_check.FullValue || conf.Opts.CompareMode > full_check.FullValueWithOutline {
 		panic(common.Logger.Errorf("invalid compare mode %d", conf.Opts.CompareMode))
 	}
@@ -100,7 +104,7 @@ func main() {
 	} else {
 		common.BigKeyThreshold = conf.Opts.BigKeyThreshold
 	}
-
+	// 原地址
 	sourceAddressList, err := client.HandleAddress(conf.Opts.SourceAddr, conf.Opts.SourcePassword, conf.Opts.SourceAuthType)
 	if err != nil {
 		panic(common.Logger.Errorf("source address[%v] illegal[%v]", conf.Opts.SourceAddr, err))
@@ -109,7 +113,7 @@ func main() {
 	} else if len(sourceAddressList) == 0 {
 		panic(common.Logger.Errorf("input source address is empty"))
 	}
-
+	// 目标地址
 	targetAddressList, err := client.HandleAddress(conf.Opts.TargetAddr, conf.Opts.TargetPassword, conf.Opts.TargetAuthType)
 	if err != nil {
 		panic(common.Logger.Errorf("target address[%v] illegal[%v]", conf.Opts.TargetAddr, err))
@@ -119,6 +123,7 @@ func main() {
 		panic(common.Logger.Errorf("input target address is empty"))
 	}
 
+	// 构造一个字典树用来进行过滤
 	// filter list
 	var filterTree *common.Trie
 	if len(conf.Opts.FilterList) != 0 {
@@ -132,12 +137,12 @@ func main() {
 		}
 		common.Logger.Infof("filter list enabled: %v", filterList)
 	}
-
+	// 覆盖掉结果集
 	// remove result file if has
 	if len(conf.Opts.ResultFile) > 0 {
 		os.Remove(conf.Opts.ResultFile)
 	}
-
+	// 构造fullCheck参数
 	fullCheckParameter := checker.FullCheckParameter{
 		SourceHost: client.RedisHost{
 			Addr:         sourceAddressList,
@@ -169,6 +174,7 @@ func main() {
 	common.Logger.Info("---------")
 
 	fullCheck := full_check.NewFullCheck(fullCheckParameter, full_check.CheckType(conf.Opts.CompareMode))
-	// 上面所有的地方都是在校验输入参数
+	// 上面所有的地方都是在校验输入参数，
+	// 启动服务
 	fullCheck.Start()
 }

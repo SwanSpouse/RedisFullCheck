@@ -13,7 +13,7 @@ func StartQoS(limit int) *Qos {
 	q := new(Qos)
 	q.limit = limit
 	q.Bucket = make(chan struct{}, limit)
-
+	// 在这里启动一个timer
 	go q.timer()
 	return q
 }

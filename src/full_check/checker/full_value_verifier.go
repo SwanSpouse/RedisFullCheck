@@ -90,9 +90,8 @@ func (p *FullValueVerifier) VerifyOneGroupKeyInfo(keyInfo []*common.Key, conflic
 			}
 
 			// 太大的 hash、list、set、zset 特殊单独处理。
-			if keyInfo[i].Tp != common.StringKeyType &&
-				(keyInfo[i].SourceAttr.ItemCount > common.BigKeyThreshold ||
-					keyInfo[i].TargetAttr.ItemCount > common.BigKeyThreshold) {
+			if keyInfo[i].Tp != common.StringKeyType && (keyInfo[i].SourceAttr.ItemCount > common.BigKeyThreshold ||
+				keyInfo[i].TargetAttr.ItemCount > common.BigKeyThreshold) {
 				if p.ignoreBigKey {
 					// 如果启用忽略大key开关，则进入这个分支
 					if keyInfo[i].SourceAttr.ItemCount != keyInfo[i].TargetAttr.ItemCount {
@@ -419,6 +418,7 @@ func (p *FullValueVerifier) Compare_String(oneKeyInfo *common.Key, conflictKey c
 	}
 }
 
+// 比较Hash or SortedSet
 func (p *FullValueVerifier) Compare_Hash_Set_SortedSet(oneKeyInfo *common.Key, conflictKey chan<- *common.Key, sourceValue, targetValue map[string][]byte) {
 	conflictField := make([]common.Field, 0, len(sourceValue)/50+1)
 	for k, v := range sourceValue {

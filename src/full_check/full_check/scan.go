@@ -40,8 +40,7 @@ func (p *FullCheck) ScanFromSourceRedis(allKeys chan<- []*common.Key) {
 			} else {
 				sourceClient, err = client.NewRedisClient(p.SourceHost, p.currentDB)
 				if err != nil {
-					panic(common.Logger.Errorf("create redis client with host[%v] db[%v] error[%v]",
-						p.SourceHost, p.currentDB, err))
+					panic(common.Logger.Errorf("create redis client with host[%v] db[%v] error[%v]", p.SourceHost, p.currentDB, err))
 				}
 			}
 			defer sourceClient.Close()
@@ -81,7 +80,7 @@ func (p *FullCheck) ScanFromSourceRedis(allKeys chan<- []*common.Key) {
 				if err != nil {
 					panic(common.Logger.Critical(err))
 				}
-
+				// 在这里拿到所有的key
 				keylist, ok := replyList[1].([]interface{})
 				if ok == false {
 					panic(common.Logger.Criticalf("scan failed, result: %+v", reply))
@@ -92,12 +91,10 @@ func (p *FullCheck) ScanFromSourceRedis(allKeys chan<- []*common.Key) {
 					if ok == false {
 						panic(common.Logger.Criticalf("scan failed, result: %+v", reply))
 					}
-
 					// check filter list
 					if common.CheckFilter(p.FilterTree, bytes) == false {
 						continue
 					}
-
 					keysInfo = append(keysInfo, &common.Key{
 						Key:          bytes,
 						Tp:           common.EndKeyType,
@@ -107,7 +104,7 @@ func (p *FullCheck) ScanFromSourceRedis(allKeys chan<- []*common.Key) {
 				}
 				p.IncrScanStat(len(keysInfo))
 				allKeys <- keysInfo
-
+				// 如果cursor = 0 说明迭代已经结束
 				if cursor == 0 {
 					break
 				}

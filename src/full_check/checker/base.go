@@ -11,11 +11,11 @@ import (
 type FullCheckParameter struct {
 	SourceHost   client.RedisHost
 	TargetHost   client.RedisHost
-	ResultDBFile string
-	CompareCount int // 比较次数限制
-	Interval     int // 两次比较之间的间隔
-	BatchCount   int // 每次从Redis里面scan的数量
-	Parallel     int // 并发度
+	ResultDBFile string // 存储结果
+	CompareCount int    // 比较次数限制
+	Interval     int    // 两次比较之间的间隔
+	BatchCount   int    // 每次从Redis里面scan的数量
+	Parallel     int    // 并发度
 	FilterTree   *common.Trie
 }
 
@@ -42,7 +42,6 @@ func (p *VerifierBase) FetchTypeAndLen(keyInfo []*common.Key, sourceClient, targ
 		keyInfo[i].Tp = common.NewKeyType(t)
 		// fmt.Printf("key:%v, type:%v cmd:%v\n", string(keyInfo[i].Key), t, keyInfo[i].Tp.FetchLenCommand)
 	}
-
 	var wg sync.WaitGroup
 	wg.Add(1)
 	// fetch len
@@ -84,6 +83,7 @@ func (p *VerifierBase) RecheckTTL(keyInfo []*common.Key, client *client.RedisCli
 	}
 }
 
+// 这里只看是否过期，不校验是否ttl一致
 func (p *VerifierBase) recheckTTL(keyInfo []*common.Key, client *client.RedisClient) {
 	keyExpire, err := client.PipeTTLCommand(keyInfo)
 	if err != nil {

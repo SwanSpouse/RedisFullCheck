@@ -123,6 +123,7 @@ type Attribute struct {
 	ItemCount int64 // the length of value
 }
 
+// Key类型
 type Key struct {
 	Key          []byte
 	Db           int32

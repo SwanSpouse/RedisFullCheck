@@ -49,24 +49,26 @@ type FullCheck struct {
 
 func NewFullCheck(f checker.FullCheckParameter, checktype CheckType) *FullCheck {
 	var verifier checker.IVerifier
-
 	fullcheck := &FullCheck{
 		FullCheckParameter: f,
 	}
-
+	// 根据CheckType构造不同的Verifier
 	switch checktype {
 	case ValueLengthOutline:
+		// 只对比value的长度是否相等
 		verifier = checker.NewValueOutlineVerifier(&fullcheck.stat, &fullcheck.FullCheckParameter)
 	case KeyOutline:
+		// 只对比key值是否相等
 		verifier = checker.NewKeyOutlineVerifier(&fullcheck.stat, &fullcheck.FullCheckParameter)
 	case FullValue:
+		// 对比key值，value长度，value值是否相等
 		verifier = checker.NewFullValueVerifier(&fullcheck.stat, &fullcheck.FullCheckParameter, false)
 	case FullValueWithOutline:
+		// 这里就和上面有一个参数不一样
 		verifier = checker.NewFullValueVerifier(&fullcheck.stat, &fullcheck.FullCheckParameter, true)
 	default:
 		panic(fmt.Sprintf("no such check type : %d", checktype))
 	}
-
 	fullcheck.verifier = verifier
 	return fullcheck
 }

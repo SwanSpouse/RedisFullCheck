@@ -53,7 +53,6 @@ func NewRedisClient(redisHost RedisHost, db int32) (RedisClient, error) {
 		redisHost: redisHost,
 		db:        db,
 	}
-
 	// send ping command first
 	ret, err := rc.Do("ping")
 	if err == nil && ret.(string) != "PONG" {
@@ -176,7 +175,7 @@ type combine struct {
 }
 
 func (c combine) String() string {
-	all := make([]string, 0, len(c.params) + 1)
+	all := make([]string, 0, len(c.params)+1)
 	all = append(all, c.command)
 	for _, ele := range c.params {
 		all = append(all, string(ele.([]byte)))
@@ -184,6 +183,7 @@ func (c combine) String() string {
 	return strings.Join(all, " ")
 }
 
+// 这里其实也没有用pipe啊
 func (p *RedisClient) PipeRawCommand(commands []combine, specialErrorPrefix string) ([]interface{}, error) {
 	if len(commands) == 0 {
 		common.Logger.Warnf("input commands length is 0")
@@ -204,7 +204,8 @@ begin:
 				return nil, err
 			}
 		}
-
+		// 这里Send和Do的区别是，Send是异步的，Do是同步的；
+		// 这里不是依次发送命令吗？
 		for _, ele := range commands {
 			err = p.conn.Send(ele.command, ele.params...)
 			if err != nil {
@@ -223,7 +224,7 @@ begin:
 			common.Logger.Errorf("flush failed[%v]", err)
 			return nil, err
 		}
-
+		// 接收命令
 		for i := 0; i < len(commands); i++ {
 			reply, err := p.conn.Receive()
 			if err != nil {
@@ -249,6 +250,7 @@ begin:
 
 // 批量请求key类型
 func (p *RedisClient) PipeTypeCommand(keyInfo []*common.Key) ([]string, error) {
+	// 首先构造一批type命令
 	commands := make([]combine, len(keyInfo))
 	for i, key := range keyInfo {
 		commands[i] = combine{
@@ -256,7 +258,7 @@ func (p *RedisClient) PipeTypeCommand(keyInfo []*common.Key) ([]string, error) {
 			params:  []interface{}{key.Key},
 		}
 	}
-
+	// 发送命令
 	result := make([]string, len(keyInfo))
 	if ret, err := p.PipeRawCommand(commands, ""); err != nil {
 		if err != emptyError {
@@ -346,7 +348,7 @@ func (p *RedisClient) PipeTTLCommand(keyInfo []*common.Key) ([]bool, error) {
 			params:  []interface{}{key.Key},
 		}
 	}
-
+	// 查看是否key过期
 	result := make([]bool, len(keyInfo))
 	if ret, err := p.PipeRawCommand(commands, ""); err != nil {
 		if err != emptyError {

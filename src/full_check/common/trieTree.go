@@ -14,6 +14,7 @@ func newTrieNode() *TrieNode {
 	return &TrieNode{children: make(map[byte]*TrieNode), isEnd: false, isStar: false}
 }
 
+// 这是一个字典树吗？
 type Trie struct {
 	root *TrieNode
 }

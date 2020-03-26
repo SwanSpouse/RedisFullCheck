@@ -12,6 +12,7 @@ type CounterStat struct {
 	Speed int64 `json:"speed"`
 }
 
+// 计数器
 type AtomicSpeedCounter struct {
 	total       int64
 	intervalSum int64

@@ -4,11 +4,13 @@ import (
 	"github.com/alibaba/RedisFullCheck/src/full_check/common"
 )
 
+// metric打点
 type Stat struct {
 	Scan          AtomicSpeedCounter
 	ConflictField [common.EndKeyTypeIndex][common.EndConflict]AtomicSpeedCounter
 	ConflictKey   [common.EndKeyTypeIndex][common.EndConflict]AtomicSpeedCounter
 
+	// TODO @limingji 这里是不是会有并发问题
 	TotalConflictFields int64
 	TotalConflictKeys   int64
 }
